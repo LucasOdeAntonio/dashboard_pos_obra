@@ -33,6 +33,8 @@ def load_and_preprocess_data(url):
 
 google_sheet_url = "https://docs.google.com/spreadsheets/d/1kjX6aEi4rGHOFmFPH9uKDnCdEGYvMiFQUpfoYvBkvO4/export?format=csv"
 df = load_and_preprocess_data(google_sheet_url)
+#st.write("Colunas disponíveis no DataFrame:", df.columns) #Carregar DF para ver colunas (caso de nomes errados)
+df.columns = df.columns.str.strip()
 
 # Primeira linha de filtros
 col_ano, col_mes, col_situacao_juridica, col_situacao_financeira = st.columns(4)
