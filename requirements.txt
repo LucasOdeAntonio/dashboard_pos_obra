@@ -3,9 +3,3 @@ plotly.express
 pandas
 openpyxl
 numpy
-plotly.graph_objects
-selenium
-selenium.webdriver.common.by
-selenium.webdriver.common.keys
-selenium.webdriver.support.ui
-selenium.webdriver.support
