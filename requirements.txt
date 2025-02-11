@@ -3,3 +3,4 @@ plotly.express
 pandas
 openpyxl
 plotly.graph_objects
+selenium 
