@@ -1,126 +1,91 @@
-import pandas as pd
 import streamlit as st
-from datetime import datetime
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import pandas as pd
+import numpy as np
+import spacy
 
-# Função para calcular a melhor correspondência com TF-IDF
-def encontrar_melhor_correspondencia_tfidf(texto, coluna_textos):
-    textos = coluna_textos.tolist() + [texto]
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(textos)
-    cosine_similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1]).flatten()
-    melhor_indice = cosine_similarities.argmax()
-    melhor_texto = textos[melhor_indice]
-    melhor_score = cosine_similarities[melhor_indice]
-    return melhor_texto, melhor_score
+# Carregar modelo de linguagem natural do spaCy
+nlp = spacy.load("pt_core_news_sm")
 
-# Função para garantir que as datas sejam convertidas para o formato correto (DD/MM/YYYY)
-def formatar_data(data):
-    return datetime.strptime(str(data), '%Y-%m-%d').strftime('%d/%m/%Y')
+# Base de conhecimento expandida para melhor enquadramento
+dados_norma = [
+    {"Grupo": "Estrutura", "Sistema": "Elementos estruturais", "Descrição": "Falhas em lajes, pilares, vigas e paredes estruturais", "Tipos de Falhas": "Trincas, fissuras, deslocamento de concreto", "Prazo de Garantia": 20},
+    {"Grupo": "Vedações", "Sistema": "Revestimentos", "Descrição": "Camada de acabamento decorativo – textura", "Tipos de Falhas": "Perda de integridade da película", "Prazo de Garantia": 3},
+    {"Grupo": "Esquadrias", "Sistema": "Janelas e Portas", "Descrição": "Vedação da interface da esquadria e requadros", "Tipos de Falhas": "Perda de estanqueidade devido à falta de aderência", "Prazo de Garantia": 0.5},
+    {"Grupo": "Sistemas", "Sistema": "Sistemas Elétricos", "Descrição": "Componentes elétricos de baixa tensão", "Tipos de Falhas": "Falha na alimentação de energia, sobrecarga", "Prazo de Garantia": 5}
+]
 
-# Carregar a planilha base2025.xlsx
-planilha_path = "base2025.xlsx"
-planilha = pd.ExcelFile(planilha_path)
+# Dicionário de termos associados a cada grupo
+termos_sistema = {
+    "Sistemas Elétricos": ["tomada", "disjuntor", "energia", "circuito", "fiação", "voltagem", "curto-circuito", "quadro elétrico"],
+    "Estrutura": ["rachadura", "trinca", "fissura", "coluna", "viga", "pilar", "afundamento"],
+    "Vedações": ["reboco", "revestimento", "azulejo", "cerâmica", "gesso", "pintura"],
+    "Esquadrias": ["janela", "porta", "batente", "vedação", "vidro", "fechadura"]
+}
 
-autoanalise_df = planilha.parse("autoanalise")
-engenharia_df = planilha.parse("engenharia")
-
-engenharia_df.columns = engenharia_df.columns.str.strip()
-autoanalise_df.columns = autoanalise_df.columns.str.strip().str.lower()
-engenharia_df.columns = engenharia_df.columns.str.strip().str.lower()
-
-# Inputs do usuário
-obra_nome = st.text_input("Obra Nome:")
-local_nome = st.text_input("Local Nome:")
-data_cvco = st.date_input("Data CVCO:")
-numero_solicitacao = st.text_input("Número da Solicitação:")
-data_abertura = st.date_input("Data de Abertura:")
-garantia_selecionada = st.text_input("Garantia Selecionada:")
-problema_relatado = st.text_area("Problema Relatado:")
-
-# Verificar se os campos obrigatórios estão preenchidos
-if obra_nome and local_nome and data_cvco and data_abertura and garantia_selecionada and problema_relatado:
+# Função para encontrar o melhor enquadramento
+def encontrar_enquadramento_com_regras(problema_relatado):
+    doc = nlp(problema_relatado.lower())
     
-    # Botão para rodar a análise
-    if st.button('Analisar'):
+    # Verificar palavras-chave primeiro e retornar imediatamente
+    for grupo, termos in termos_sistema.items():
+        if any(token.text in termos for token in doc):
+            for item in dados_norma:
+                if item["Grupo"] == grupo:
+                    return item  # Retorna o primeiro item correto
+    
+    # Se não encontrou correspondência direta, faz um comparativo semântico
+    melhor_pontuacao = 0
+    melhor_item = None
+    
+    for item in dados_norma:
+        descricao_doc = nlp(item["Descrição"].lower())
+        similaridade = doc.similarity(descricao_doc)
         
-        # Formatando as datas
-        data_cvco_formatada = formatar_data(data_cvco)
-        data_abertura_formatada = formatar_data(data_abertura)
-        
-        # Filtrar pela Obra Nome e Local Nome na aba engenharia
-        if "obra nome" in engenharia_df.columns and "local nome" in engenharia_df.columns:
-            engenharia_filtrada = engenharia_df[
-                (engenharia_df["obra nome"].str.contains(obra_nome, na=False, case=False)) &
-                (engenharia_df["local nome"].str.contains(local_nome, na=False, case=False))
-            ]
-        else:
-            st.error("As colunas 'Obra Nome' ou 'Local Nome' não foram encontradas na aba engenharia.")
-            engenharia_filtrada = pd.DataFrame()  # DataFrame vazio para evitar erros subsequentes
+        if similaridade > melhor_pontuacao:
+            melhor_pontuacao = similaridade
+            melhor_item = item
+    
+    return melhor_item
 
-        # Análise de textos similares
-        if not engenharia_filtrada.empty:
-            if "problema relatado" in engenharia_filtrada.columns:
-                problema_similar, score_problema = encontrar_melhor_correspondencia_tfidf(
-                    problema_relatado, engenharia_filtrada["problema relatado"]
-                )
-                problema_similar = problema_similar.replace("_x000D_", "\n").strip()
+# Definir função de validação do prazo de garantia
+def validar_prazo_garantia(obra_nome, data_solicitacao, prazo_garantia):
+    data_cvco = pd.to_datetime("2020-01-01")  # Aqui deve ser ajustado para buscar na base real
+    data_solicitacao = pd.to_datetime(data_solicitacao)
+    diferenca_anos = (data_solicitacao - data_cvco).days / 365
+    return "PROCEDENTE" if diferenca_anos <= prazo_garantia else "IMPROCEDENTE"
 
-                # Exibir resultados
-                st.subheader("Resultados da Análise")
-                st.write(f"**Texto Similar no Problema Relatado:**\n{problema_similar}\n(Score: {score_problema:.2f})")
-            else:
-                st.error("A coluna 'problema relatado' não foi encontrada na aba engenharia.")
-        else:
-            st.error("Nenhum registro encontrado para a Obra Nome e Local Nome informados.")
+# Função para processar a solicitação
+def processar_solicitacao(obra_nome, garantia_selecionada, problema_relatado, data_solicitacao, numero_solicitacao):
+    enquadramento = encontrar_enquadramento_com_regras(problema_relatado)
+    status_garantia = validar_prazo_garantia(obra_nome, data_solicitacao, enquadramento["Prazo de Garantia"])
+    return {
+        "Número da Solicitação": numero_solicitacao,
+        "Obra Nome": obra_nome,
+        "Garantia Selecionada": garantia_selecionada,
+        "Problema Relatado": problema_relatado,
+        "Grupo Identificado": enquadramento["Grupo"],
+        "Sistema Identificado": enquadramento["Sistema"],
+        "Descrição Identificada": enquadramento["Descrição"],
+        "Tipo de Falha Identificado": enquadramento["Tipos de Falhas"],
+        "Prazo de Garantia": enquadramento["Prazo de Garantia"],
+        "Status da Garantia": status_garantia
+    }
 
-        # Exibir o Histórico Similar com Número da Solicitação
-        st.subheader("Histórico Similar")
-        st.write(f"**Histórico Similar:** {problema_similar}")
-        
-        # Obter o número da solicitação a partir das colunas "Solicitação Número" ou "VR-Chamado"
-        numero_solicitacao_1 = engenharia_filtrada.get("solicitacao numero", pd.Series([None]))
-        numero_solicitacao_2 = engenharia_filtrada.get("vr-chamado", pd.Series([None]))
+# Criar interface no Streamlit
+st.title("Análise de Solicitações - Garantia e Enquadramento")
 
-        # Verificar se há valor válido nas duas colunas
-        if pd.notna(numero_solicitacao_1.iloc[0]) and pd.notna(numero_solicitacao_2.iloc[0]):  # Verifica se ambos têm valores
-            st.write(f"**Número da Solicitação (1):** {numero_solicitacao_1.iloc[0]}")
-            st.write(f"**Número da Solicitação (2):** {numero_solicitacao_2.iloc[0]}")
-        elif pd.notna(numero_solicitacao_1.iloc[0]):  # Verifica se a primeira coluna tem valor
-            st.write(f"**Número da Solicitação:** {numero_solicitacao_1.iloc[0]}")
-        elif pd.notna(numero_solicitacao_2.iloc[0]):  # Verifica se a segunda coluna tem valor
-            st.write(f"**Número da Solicitação:** {numero_solicitacao_2.iloc[0]}")
+# Criar campos do formulário
+obra_nome = st.text_input("Obra Nome")
+garantia_selecionada = st.text_input("Garantia Selecionada")
+problema_relatado = st.text_area("Problema Relatado")
+data_solicitacao = st.date_input("Data da Solicitação")
+numero_solicitacao = st.text_input("Número da Solicitação")
 
-        # Cálculo do prazo de garantia (em anos)
-        prazo_garantia_coluna = "prazo de garantia"
-        
-        if prazo_garantia_coluna in autoanalise_df.columns:
-            # Buscar o prazo de garantia com base na garantia selecionada
-            prazo_garantia_match = autoanalise_df[
-                autoanalise_df["grupo sistema construtivo"].str.contains(garantia_selecionada, na=False, case=False)
-            ]
-            if not prazo_garantia_match.empty:
-                prazo_garantia = prazo_garantia_match[prazo_garantia_coluna].iloc[0]  # Selecionar o primeiro resultado
-            else:
-                st.error(f"Nenhum prazo de garantia encontrado para a Garantia Selecionada: '{garantia_selecionada}' na aba autoanalise.")
-                prazo_garantia = None
-        else:
-            prazo_garantia = None
-            st.error("A coluna 'prazo de garantia' não foi encontrada na aba autoanalise.")
-
-        # Determinar o status (PROCEDENTE ou IMPROCEDENTE)
-        if prazo_garantia is not None:
-            anos_diferenca = (datetime.strptime(data_abertura_formatada, '%d/%m/%Y') - datetime.strptime(data_cvco_formatada, '%d/%m/%Y')).days / 365.25
-            if anos_diferenca > prazo_garantia:
-                status = "IMPROCEDENTE"
-            else:
-                status = "PROCEDENTE"
-
-            # Exibir o status final
-            st.write(f"**Prazo de Garantia (anos):** {prazo_garantia}")
-            st.write(f"**Status Final:** {status}")
-        else:
-            st.write("Não foi possível determinar o status devido à ausência de informações de prazo de garantia.")
-else:
-    st.warning("Por favor, preencha todos os campos antes de clicar em 'Analisar'.")
+# Botão para processar a solicitação
+if st.button("Analisar Solicitação"):
+    if obra_nome and problema_relatado and data_solicitacao:
+        resultado = processar_solicitacao(obra_nome, garantia_selecionada, problema_relatado, data_solicitacao, numero_solicitacao)
+        st.write("### Resultado da Análise:")
+        st.json(resultado)
+    else:
+        st.warning("Por favor, preencha todos os campos obrigatórios.")

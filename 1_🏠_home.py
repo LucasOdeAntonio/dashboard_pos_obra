@@ -22,6 +22,8 @@ st.image("fluxograma.png", caption="")
 
 st.markdown('''
        Painel para Acompanhamento de Metas Estratégicas - OKR's ''')
+st.markdown('''
+       Painel de Resultados BI Até 2024 https://app.powerbi.com/view?r=eyJrIjoiYjM0YTU4OWItNGEwOS00MGZkLWE1NGMtYTQyZWM5OGYzYjNiIiwidCI6Ijk5MWEwMGM5LTY1ZGUtNDFjMS04YzUxLTI3N2Q4YzEwZmNkYSJ9 ''')
 # CEBEÇALHO FIM ===============================================================================================================================
 
 # COMO FAZER PRA VIR DE EXCEL =================================================================================================================

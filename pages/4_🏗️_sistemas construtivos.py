@@ -181,6 +181,115 @@ try:
     with col12:
         st.metric("MTTC - Tempo Médio para Conclusão", f"{tempo_medio_conclusao:.2f} dias")
 
+    # 5 – Gráfico para Sistema Construtivo
+df_sys = df_filtered.groupby("Sistema Construtivo").size().reset_index(name="Count")
+fig_sys = px.bar(
+    df_sys,
+    x="Sistema Construtivo",
+    y="Count",
+    barmode="stack",
+    text="Count"
+)
+st.plotly_chart(fig_sys, use_container_width=True)
+st.markdown("---")
+
+# 8 – Gráfico para Tipo de Falha
+df_falha = df_filtered.groupby("Tipo de Falha").size().reset_index(name="Count")
+fig_falha = px.bar(
+    df_falha,
+    x="Tipo de Falha",
+    y="Count",
+    barmode="stack",
+    text="Count"
+)
+st.plotly_chart(fig_falha, use_container_width=True)
+st.markdown("---")
+
+# 9 – Gráfico Empilhado por Empreendimento (Sistema Construtivo)
+df_emp_sys = df_filtered.groupby(["Empreendimento", "Sistema Construtivo"]).size().reset_index(name="Count")
+fig_emp_sys = px.bar(
+    df_emp_sys,
+    x="Empreendimento",
+    y="Count",
+    color="Sistema Construtivo",
+    barmode="stack",
+    text="Count"
+)
+st.plotly_chart(fig_emp_sys, use_container_width=True)
+st.markdown("---")
+
+# 10 – Gráfico Empilhado por Empreendimento (Tipo de Falha)
+df_emp_falha = df_filtered.groupby(["Empreendimento", "Tipo de Falha"]).size().reset_index(name="Count")
+fig_emp_falha = px.bar(
+    df_emp_falha,
+    x="Empreendimento",
+    y="Count",
+    color="Tipo de Falha",
+    barmode="stack",
+    text="Count"
+)
+st.plotly_chart(fig_emp_falha, use_container_width=True)
+st.markdown("---")
+
+# 11 – Gráfico de MTBF por Sistema Construtivo
+def compute_mtbf_group(group):
+    if group["Data CVCO"].isnull().all():
+        return np.nan
+    max_data = group["Data de Abertura"].max()
+    min_cvco = group["Data CVCO"].min()
+    op_hours = (max_data - min_cvco).total_seconds() / 3600
+    return op_hours / group.shape[0]
+
+mtbf_sys = df_filtered.groupby("Sistema Construtivo").apply(compute_mtbf_group).reset_index(name="MTBF")
+fig_mtbf_sys = px.bar(
+    mtbf_sys,
+    x="Sistema Construtivo",
+    y="MTBF",
+    text="MTBF"
+)
+st.plotly_chart(fig_mtbf_sys, use_container_width=True)
+st.markdown("---")
+
+# 12 – Gráfico de MTBF por Tipo de Falha
+mtbf_falha = df_filtered.groupby("Tipo de Falha").apply(compute_mtbf_group).reset_index(name="MTBF")
+fig_mtbf_falha = px.bar(
+    mtbf_falha,
+    x="Tipo de Falha",
+    y="MTBF",
+    text="MTBF"
+)
+st.plotly_chart(fig_mtbf_falha, use_container_width=True)
+st.markdown("---")
+
+# 13 – Gráfico de MTTR por Sistema Construtivo
+def compute_mttr_group(group):
+    closed = group[group["Encerramento"].notna()]
+    if closed.empty:
+        return np.nan
+    total_hours = closed["Tempo de Encerramento"].sum() * 24
+    return total_hours / closed.shape[0]
+
+mttr_sys = df_filtered.groupby("Sistema Construtivo").apply(compute_mttr_group).reset_index(name="MTTR")
+fig_mttr_sys = px.bar(
+    mttr_sys,
+    x="Sistema Construtivo",
+    y="MTTR",
+    text="MTTR"
+)
+st.plotly_chart(fig_mttr_sys, use_container_width=True)
+st.markdown("---")
+
+# 14 – Gráfico de MTTR por Tipo de Falha
+mttr_falha = df_filtered.groupby("Tipo de Falha").apply(compute_mttr_group).reset_index(name="MTTR")
+fig_mttr_falha = px.bar(
+    mttr_falha,
+    x="Tipo de Falha",
+    y="MTTR",
+    text="MTTR"
+)
+st.plotly_chart(fig_mttr_falha, use_container_width=True)
+st.markdown("---")
+
 
     csv_file = 'lagoapark2.csv'
     df_departamento.to_csv(csv_file, index=False, encoding='utf-8')  # Salva sem o índice e com codificação UTF-8
