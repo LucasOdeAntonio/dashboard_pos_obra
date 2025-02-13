@@ -45,7 +45,7 @@ df = pd.read_excel("base2025.xlsx", sheet_name="NPS")
 df["Nota"] = pd.to_numeric(df["Nota"], errors="coerce")
 
 # Calcular a Média Satisfação usando a fórmula: (soma das notas / 4) * 2
-media_satisfacao = (df["Nota"].sum() / 4) * 2
+media_satisfacao = (((df["Nota"].sum() / 4) * 2) *10)
 
 # Exibir o Dashboard
 st.title("Dashboard de Satisfação")
