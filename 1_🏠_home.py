@@ -5,7 +5,7 @@ import pandas as pd
 st.set_page_config(
     page_icon="Home.jpg",
     layout='wide',
-    page_title="Departamento de Pós Obra"
+    page_title="Pós Obra - Home"
 )
 
 #Logo superior no sidebar, imagem grande e reduzida.
@@ -16,8 +16,8 @@ st.logo(image=logo_horizontal, size="large",icon_image=logo_reduzida)
 
 # CEBEÇALHO INÍCIO ===========================================================================================================================
 #st.image("LOGO_VR.png", caption="") - pra adicionar imagens
-st.markdown('<h1 style="color: orange;">PAINEL DE RESULTADOS 📈</h1>', unsafe_allow_html=True)
-st.image("fluxograma.png", caption="")
+st.markdown('<h1 style="color: orange;">Painel de Resultados 📈</h1>', unsafe_allow_html=True)
+#st.image("fluxograma.png", caption="")
 
 
 st.markdown('''
@@ -33,7 +33,7 @@ excel_home = 'planilha_home.xlsx'
 ordem_meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
 
 try:
-    # Lendo o arquivo Excel
+    # Lendo o arquivo Excelst
     df_original = pd.read_excel(excel_home)
 
     # Verificando se há colunas 'OBJETIVOS', 'ANO', e 'MÊS'

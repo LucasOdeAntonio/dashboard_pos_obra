@@ -8,7 +8,7 @@ import locale
 st.set_page_config(
     page_icon="Home.jpg",
     layout='wide',
-    page_title="Departamento de Pós Obra"
+    page_title="Pós Obra - Departamento"
 )
 
 # Configurar o locale para formato brasileiro
@@ -43,7 +43,7 @@ try:
     df_departamento['Data Entrega de obra'] = df_departamento['Data Entrega de obra'].dt.strftime('%d/%m/%Y')  # Data no formato dd/mm/aaaa
 
     # Filtro de múltiplas seleções para 'Obra Nome' na sidebar
-    obras_disponiveis = df_departamento['Obra Nome'].unique().tolist()
+    obras_disponiveis = df_departamento['Empreendimento'].unique().tolist()
     obra_nome_selecionadas = st.sidebar.multiselect("Filtrar por Obra Nome:", obras_disponiveis, default=[])
 
     # Filtro de "Status" na sidebar com as opções únicas da coluna "Status"
@@ -52,13 +52,13 @@ try:
 
     # Aplicando os filtros selecionados
     if obra_nome_selecionadas:
-        df_departamento = df_departamento[df_departamento['Obra Nome'].isin(obra_nome_selecionadas)]
+        df_departamento = df_departamento[df_departamento['Empreendimento'].isin(obra_nome_selecionadas)]
 
     if status_selecionados:
         df_departamento = df_departamento[df_departamento['Status'].isin(status_selecionados)]
 
     # Exibindo apenas até a coluna "Despesa Total Manut"
-    df_departamento = df_departamento.loc[:, :'Despesa Total Manut']
+    df_departamento = df_departamento.loc[:, :'Despesa Manutenção']
 
     # Verificar se as colunas de "N° Unidades" e "Orçamento (1,5%)" são numéricas
     df_departamento['N° Unidades'] = pd.to_numeric(df_departamento['N° Unidades'], errors='coerce')

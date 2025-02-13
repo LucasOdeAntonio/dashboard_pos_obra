@@ -80,7 +80,7 @@ def load_and_preprocess_data(filepath):
 st.set_page_config(
     page_icon="Home.jpg",
     layout='wide',
-    page_title="Painel Assistência Técnica"
+    page_title="Pós Obra - Assistência Técnica"
 )
 
 # Exibição dos logos (utilizando use_container_width, pois use_column_width está depreciado)
@@ -88,7 +88,7 @@ logo_horizontal='LOGO_VR.png'
 logo_reduzida="LOGO_VR_REDUZIDA.png"
 st.logo(image=logo_horizontal, size="large",icon_image=logo_reduzida)
 
-st.markdown('<h1 style="color: orange;">PAINEL DE ASSISTÊNCIA TÉCNICA 💥</h1>', unsafe_allow_html=True)
+st.markdown('<h1 style="color: orange;">Painel de Assistência Técnica 💥</h1>', unsafe_allow_html=True)
 st.markdown('Acompanhamento de Solicitações de Assistência Técnica')
 
 # =============================================================================
@@ -453,8 +453,6 @@ fig4.update_traces(
 
 fig4.update_layout(
     showlegend=False,  # Remove a legenda
-    plot_bgcolor="white",
-    paper_bgcolor="white",
     margin=dict(l=10, r=10, t=30, b=10),
     font=dict(size=12)
 )
@@ -565,8 +563,6 @@ fig6.update_layout(
     xaxis=dict(
         showgrid=False
     ),
-    plot_bgcolor="white",
-    paper_bgcolor="white",
     showlegend=False,  # Remove a legenda
     margin=dict(l=10, r=10, t=30, b=30)
 )
@@ -575,7 +571,7 @@ st.plotly_chart(fig6, use_container_width=True)
 st.markdown("---")
 
 # 7 – MTTC – Tempo Médio de Conclusão (Por Obra)
-st.write("### MTTC - Tempo Médio de Conclusão (Por Obra)")
+st.write("### ⚒️ MTTC - Tempo Médio de Conclusão (Por Obra)")
 st.metric("MTTC Geral", f"{mttc:.2f} dias")
 
 # Calcular o MTTC por empreendimento
@@ -623,8 +619,6 @@ fig_mttc.update_layout(
         y=1, 
         title=None  # Remove o título "Empreendimento" da legenda
     ),
-    plot_bgcolor="white",
-    paper_bgcolor="white",
     margin=dict(l=10, r=200, t=30, b=10),  # Ajuste para acomodar a legenda na direita
 )
 
