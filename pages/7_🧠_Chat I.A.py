@@ -3,29 +3,22 @@ import pandas as pd
 import openai
 import os
 
-# Configurando Página
+# Configurando a página - TEM QUE SER O PRIMEIRO COMANDO DO STREAMLIT
 st.set_page_config(
-    page_icon="Home.jpg",
-    layout='wide',
-    page_title="Pós Obra - Auto Análise"
+    page_icon="🧠",
+    page_title="Assistente A.T",
+    layout='wide'
 )
 
-#Logo superior no sidebar, imagem grande e reduzida.
-logo_horizontal='LOGO_VR.png'
-logo_reduzida="LOGO_VR_REDUZIDA.png"
-st.logo(image=logo_horizontal, size="large",icon_image=logo_reduzida)
+# Logo superior no sidebar, imagem grande e reduzida.
+logo_horizontal = 'LOGO_VR.png'
+logo_reduzida = "LOGO_VR_REDUZIDA.png"
+st.logo(image=logo_horizontal, size="large", icon_image=logo_reduzida)
 
-
-# CEBEÇALHO INÍCIO ===========================================================================================================================
-#st.image("LOGO_VR.png", caption="") - pra adicionar imagens
+# Cabeçalho
 st.markdown('<h1 style="color: orange;">Auto Análise Preliminar ♻️</h1>', unsafe_allow_html=True)
-#st.image("fluxograma.png", caption="")
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
-
-# Configuração do layout do Streamlit
-st.set_page_config(page_title="Assistente A.T", page_icon="🧠")
 
 st.title("🧠 Assistente A.T")
 st.write("Tire suas dúvidas sobre o **Manual do Proprietário** e a **NBR 17.170**!")
