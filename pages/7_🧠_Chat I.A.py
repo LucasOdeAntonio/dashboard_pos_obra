@@ -35,9 +35,10 @@ if user_input:
     try:
         # Envia a pergunta para a API da OpenAI
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=st.session_state.messages
         )
+
 
         bot_response = response.choices[0].message.content
 
