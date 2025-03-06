@@ -9,8 +9,10 @@ from datetime import datetime
 # ================================
 # Autenticação Simples
 # ================================
-USERNAME = "lucas.oliveira"
-PASSWORD = "lucas123"
+USERS = {
+    "lucas.oliveira": "lucas123",
+    "sergio.lopes": "sergio123"  # usuário adicional
+}
 
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -20,7 +22,7 @@ if not st.session_state["authenticated"]:
     user_input = st.text_input("Usuário")
     password_input = st.text_input("Senha", type="password")
     if st.button("Entrar"):
-        if user_input == USERNAME and password_input == PASSWORD:
+        if user_input in USERS and password_input == USERS[user_input]:
             st.session_state["authenticated"] = True
             try:
                 st.experimental_rerun()
