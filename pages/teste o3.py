@@ -85,8 +85,9 @@ df_eng, df_dep = load_data()
 # =========================================
 # Conversão de Datas (engenharia)
 # =========================================
-df_eng["Data de Abertura"] = pd.to_datetime(df_eng["Data de Abertura"], dayfirst=True, errors="coerce")
-df_eng["Encerramento"] = pd.to_datetime(df_eng["Encerramento"], dayfirst=True, errors="coerce")
+# Converter e normalizar para considerar somente a data (DD/MM/AAAA)
+df_eng["Data de Abertura"] = pd.to_datetime(df_eng["Data de Abertura"], dayfirst=True, errors="coerce").dt.normalize()
+df_eng["Encerramento"] = pd.to_datetime(df_eng["Encerramento"], dayfirst=True, errors="coerce").dt.normalize()
 
 # =========================================
 # Integração com a Aba "departamento"
@@ -123,14 +124,14 @@ df_eng = df_eng.merge(
     suffixes=("", "_dep")
 )
 
-# Converter "Data CVCO" para datetime
-df_eng["Data CVCO"] = pd.to_datetime(df_eng["Data CVCO"], dayfirst=True, errors="coerce")
+# Converter "Data CVCO" para datetime e normalizar
+df_eng["Data CVCO"] = pd.to_datetime(df_eng["Data CVCO"], dayfirst=True, errors="coerce").dt.normalize()
 
 # =========================================
 # Cálculos Iniciais (Tempo de Encerramento e Dias em Aberto)
 # =========================================
 df_eng["Tempo de Encerramento"] = (df_eng["Encerramento"] - df_eng["Data de Abertura"]).dt.days
-hoje = pd.to_datetime(date.today())
+hoje = pd.to_datetime(date.today()).normalize()  # Apenas a data
 df_eng["Dias em Aberto"] = np.where(
     df_eng["Encerramento"].isna(),
     (hoje - df_eng["Data de Abertura"]).dt.days,
@@ -218,17 +219,34 @@ st.dataframe(df_filtered)
 def compute_metrics(group):
     """
     Calcula as métricas para o grupo (ou sistema) considerando:
-      - T_disponível: diferença entre a última "Data de Abertura" e a menor "Data CVCO", convertida para horas.
-      - T_parada: soma, em horas, de (Encerramento - Data de Abertura) para cada ocorrência.
-      - MTBF: (T_disponível - T_parada) / número de ocorrências.
-      - MTTR: T_parada / número de ocorrências.
+      - Horas em bom funcionamento:
+          * Se houver somente uma ocorrência: (Data de Abertura - Data CVCO) em horas.
+          * Se houver mais de uma ocorrência:
+                Intervalo 1 = (Data de Abertura da 1ª ocorrência - Data CVCO) em horas.
+                Para i = 2 até N: Intervalo i = (Data de Abertura da ocorrência i - Encerramento da ocorrência i-1) em horas.
+      - MTBF: Soma dos intervalos de bom funcionamento / número de ocorrências.
+      - MTTR: Média do tempo de parada em horas, onde cada tempo de parada = (Encerramento - Data de Abertura) em horas.
       - Disponibilidade: MTBF/(MTBF+MTTR)*100%.
     """
-    available_hours = (group["Data de Abertura"].max() - group["Data CVCO"].min()).total_seconds() / 3600
-    downtime_hours = group.apply(lambda row: (row["Encerramento"] - row["Data de Abertura"]).total_seconds() / 3600, axis=1).sum()
-    occurrences = group.shape[0]
-    mtbf = (available_hours - downtime_hours) / occurrences
-    mttr = downtime_hours / occurrences
+    group_sorted = group.sort_values("Data de Abertura")
+    n = group_sorted.shape[0]
+    if n == 0:
+        return pd.Series({"MTBF": np.nan, "MTTR": np.nan, "Disponibilidade": np.nan})
+    # Primeiro intervalo: da menor Data CVCO (para o grupo) até a Data de Abertura da 1ª ocorrência.
+    min_cvco = group_sorted["Data CVCO"].min()
+    good_hours = (group_sorted.iloc[0]["Data de Abertura"] - min_cvco).total_seconds() / 3600
+    # Para as ocorrências subsequentes: diferença entre Data de Abertura da ocorrência atual e Encerramento da anterior.
+    for i in range(1, n):
+        current_abr = group_sorted.iloc[i]["Data de Abertura"]
+        previous_enc = group_sorted.iloc[i-1]["Encerramento"]
+        interval_i = (current_abr - previous_enc).total_seconds() / 3600
+        good_hours += interval_i
+    mtbf = good_hours / n
+    # MTTR: Média do tempo de parada de cada ocorrência (Encerramento - Data de Abertura) em horas.
+    downtime_hours = group_sorted.apply(
+        lambda row: (row["Encerramento"] - row["Data de Abertura"]).total_seconds() / 3600, axis=1
+    ).sum()
+    mttr = downtime_hours / n
     dispon = (mtbf / (mtbf + mttr)) * 100 if (mtbf + mttr) > 0 else np.nan
     return pd.Series({"MTBF": mtbf, "MTTR": mttr, "Disponibilidade": dispon})
 
@@ -252,13 +270,14 @@ def add_border(fig):
 st.markdown("## Gráficos")
 
 # --- Fig1: MTBF por Grupo Construtivo ---
+# Para métricas, o TOP N exibirá os menores valores (ordem crescente)
 top_option_fig1 = st.selectbox("Selecione top para MTBF por Grupo Construtivo", 
                                  options=["Todos", "Top 5", "Top 10", "Top 20"],
                                  index=0, key="fig1")
 mtbf_group_plot = metrics_group["MTBF"].copy()
 if top_option_fig1 != "Todos":
     n = int(top_option_fig1.split()[1])
-    mtbf_group_plot = mtbf_group_plot.sort_values(ascending=False).head(n)
+    mtbf_group_plot = mtbf_group_plot.sort_values(ascending=True).head(n)
 fig1 = px.bar(
     x=mtbf_group_plot.index,
     y=mtbf_group_plot.values,
@@ -278,7 +297,7 @@ top_option_fig2 = st.selectbox("Selecione top para MTBF por Sistema Construtivo"
 mtbf_system_plot = metrics_system["MTBF"].copy()
 if top_option_fig2 != "Todos":
     n = int(top_option_fig2.split()[1])
-    mtbf_system_plot = mtbf_system_plot.sort_values(ascending=False).head(n)
+    mtbf_system_plot = mtbf_system_plot.sort_values(ascending=True).head(n)
 fig2 = px.bar(
     x=mtbf_system_plot.index,
     y=mtbf_system_plot.values,
@@ -299,7 +318,7 @@ mttr_group_plot = metrics_group["MTTR"].copy()
 disp_group_plot = metrics_group["Disponibilidade"].copy()
 if top_option_fig3 != "Todos":
     n = int(top_option_fig3.split()[1])
-    mttr_group_plot = mttr_group_plot.sort_values(ascending=False).head(n)
+    mttr_group_plot = mttr_group_plot.sort_values(ascending=True).head(n)
     disp_group_plot = disp_group_plot.loc[mttr_group_plot.index]
 fig3 = px.bar(
     x=mttr_group_plot.index,
@@ -322,7 +341,7 @@ mttr_system_plot = metrics_system["MTTR"].copy()
 disp_system_plot = metrics_system["Disponibilidade"].copy()
 if top_option_fig4 != "Todos":
     n = int(top_option_fig4.split()[1])
-    mttr_system_plot = mttr_system_plot.sort_values(ascending=False).head(n)
+    mttr_system_plot = mttr_system_plot.sort_values(ascending=True).head(n)
     disp_system_plot = disp_system_plot.loc[mttr_system_plot.index]
 fig4 = px.bar(
     x=mttr_system_plot.index,
@@ -338,6 +357,7 @@ fig4.update_traces(marker_color=colors, marker_line_color=line_colors, marker_li
 st.plotly_chart(fig4, use_container_width=True)
 
 # --- Fig5: Curva ABC por Grupo Construtivo (Incidências) ---
+# Para as curvas ABC, o filtro TOP N usa os maiores valores (ordem decrescente)
 top_option_fig5 = st.selectbox("Selecione top para Curva ABC por Grupo Construtivo", 
                                  options=["Todos", "Top 5", "Top 10", "Top 20"],
                                  index=0, key="fig5")
