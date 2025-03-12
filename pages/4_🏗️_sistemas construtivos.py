@@ -4,6 +4,9 @@ import numpy as np
 import plotly.express as px
 import random
 from datetime import date
+import sys
+import os
+from PIL import Image
 
 # =========================================
 # Funções de Cores e Classificação ABC
@@ -60,10 +63,17 @@ st.set_page_config(
     page_title="Pós Obra - Sistemas Construtivos"
 )
 
-logo_horizontal = 'LOGO_VR.png'
-logo_reduzida = "LOGO_VR_REDUZIDA.png"
-st.sidebar.image(logo_horizontal, use_container_width=True)
-st.sidebar.image(logo_reduzida, width=100)
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+logo_path = resource_path("LOGO_VR.png")
+try:
+    logo_image = Image.open(logo_path)
+    st.logo(image=logo_image, size="large")
+except Exception as e:
+    st.error(f"Não foi possível carregar a imagem: {e}")
 
 st.markdown('<h1 style="color: orange;">Sistemas Construtivos 🏗️</h1>', unsafe_allow_html=True)
 st.markdown("Página em Construção. Volte mais tarde! 🚧")

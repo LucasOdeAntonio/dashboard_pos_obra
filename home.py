@@ -1,25 +1,43 @@
 import streamlit as st
 import pandas as pd
+import sys
+import os
+from PIL import Image
 
-# Configurando Página
+def resource_path(relative_path):
+    """
+    Obtém o caminho absoluto para um recurso.
+    Funciona tanto em desenvolvimento quanto quando empacotado com PyInstaller (modo onefile).
+    """
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+# Configurando Página (usa o resource_path para encontrar o ícone)
 st.set_page_config(
-    page_icon="Home.jpg",
+    page_icon=resource_path("Home.jpg"),
     layout='wide',
     page_title="Pós Obra - Home"
 )
 
-#Logo superior no sidebar, imagem grande e reduzida.
-logo_horizontal='LOGO_VR.png'
-logo_reduzida="LOGO_VR_REDUZIDA.png"
-st.logo(image=logo_horizontal, size="large",icon_image=logo_reduzida)
+# Carregar os logos usando resource_path e PIL para garantir a leitura correta
+logo_horizontal_path = resource_path("LOGO_VR.png")
+logo_reduzida_path = resource_path("LOGO_VR_REDUZIDA.png")
+try:
+    logo_horizontal_image = Image.open(logo_horizontal_path)
+    logo_reduzida_image = Image.open(logo_reduzida_path)
+except Exception as e:
+    st.error("Erro ao carregar os logos: " + str(e))
+    logo_horizontal_image = None
+    logo_reduzida_image = None
 
+if logo_horizontal_image and logo_reduzida_image:
+    st.logo(image=logo_horizontal_image, size="large", icon_image=logo_reduzida_image)
+else:
+    st.write("Logos não carregados.")
 
 # CEBEÇALHO INÍCIO ===========================================================================================================================
-#st.image("LOGO_VR.png", caption="") - pra adicionar imagens
 st.markdown('<h1 style="color: orange;">Painel de Resultados 📈</h1>', unsafe_allow_html=True)
-#st.image("fluxograma.png", caption="")
-
-
 st.markdown('''
        Painel para Acompanhamento de Metas Estratégicas - OKR's ''')
 st.markdown('''
@@ -27,16 +45,17 @@ st.markdown('''
 # CEBEÇALHO FIM ===============================================================================================================================
 
 # COMO FAZER PRA VIR DE EXCEL =================================================================================================================
-excel_home = 'planilha_home.xlsx'
+# Utilize resource_path para carregar o arquivo Excel
+excel_home = resource_path("planilha_home.xlsx")
 
 # Lista fixa de meses para ordenar corretamente
 ordem_meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
 
 try:
-    # Lendo o arquivo Excelst
+    # Lendo o arquivo Excel
     df_original = pd.read_excel(excel_home)
 
-    # Verificando se há colunas 'OBJETIVOS', 'ANO', e 'MÊS'
+    # Verificando se há colunas 'OBJETIVOS', 'ANO' e 'MÊS'
     if all(col in df_original.columns for col in ['OBJETIVOS', 'ANO', 'MÊS']):
         # Garantindo que a coluna 'MÊS' contenha strings válidas
         df_original['MÊS'] = df_original['MÊS'].apply(lambda x: str(x).capitalize() if not pd.isna(x) else "")
@@ -100,9 +119,9 @@ try:
         else:
             st.markdown("Dados de Todos os Meses")
 
-        # Salvando o conteúdo como CSV
-        csv_file = 'planilha_home.csv'
-        df_filtered.to_csv(csv_file, index=False, encoding='utf-8')  # Salva sem o índice e com codificação UTF-8
+        # Salvando o conteúdo como CSV (nesse caso, salvamos no diretório atual)
+        csv_file = "planilha_home.csv"
+        df_filtered.to_csv(csv_file, index=False, encoding='utf-8')
 
         st.markdown("### Objetivos e Indicadores Estratégicos")
         # Exibindo o DataFrame filtrado no Streamlit com largura ajustada
@@ -117,8 +136,7 @@ except Exception as e:
     st.error(f"Ocorreu um erro: {e}")
 # FIM DE COMO FAZER PRA VIR DE EXCEL ===========================================================================================================
 
-
-# Configurando o Sidebar
-#st.sidebar.image("LOGO_VR.png", width=200, use_container_width=True)
+# Configurando o Sidebar (opcional)
+#st.sidebar.image(resource_path("LOGO_VR.png"), width=200, use_container_width=True)
 #st.sidebar.text("Desenvolvido por Lucas Oliveira")
 #st.sidebar.markdown("**Desenvolvido por Lucas Oliveira**")

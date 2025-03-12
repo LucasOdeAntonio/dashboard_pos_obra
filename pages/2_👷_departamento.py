@@ -3,6 +3,9 @@ import pandas as pd
 import plotly.express as px
 import warnings
 import locale
+import sys
+import os
+from PIL import Image
 
 # Configurando Página
 st.set_page_config(
@@ -15,10 +18,18 @@ st.set_page_config(
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
 #Logo superior no sidebar, imagem grande e reduzida.
-logo_horizontal='LOGO_VR.png'
-logo_reduzida="LOGO_VR_REDUZIDA.png"
-st.logo(image=logo_horizontal, size="large",icon_image=logo_reduzida)
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
+logo_path = resource_path("LOGO_VR.png")
+try:
+    logo_image = Image.open(logo_path)
+    st.logo(image=logo_image, size="large")
+except Exception as e:
+    st.error(f"Não foi possível carregar a imagem: {e}")
+    
 # CEBEÇALHO INÍCIO ===========================================================================================================================
 #st.image("LOGO_VR.png", caption="") - pra adicionar imagens
 st.markdown('<h1 style="color: orange;">PAINEL GERENCIAL 🚩</h1>', unsafe_allow_html=True)
