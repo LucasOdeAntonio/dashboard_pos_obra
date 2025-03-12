@@ -6,7 +6,7 @@ from utils import resource_path  # Importa a função centralizada
 
 def start_streamlit():
     # Usa resource_path para localizar o arquivo home.py
-    home_file = resource_path("home.py")
+    home_file = resource_path("1_🏠_home.py")
     subprocess.run(["streamlit", "run", home_file])
 
 if __name__ == '__main__':
