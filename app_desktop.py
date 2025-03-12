@@ -1,18 +1,8 @@
-import sys
-import os
 import threading
 import subprocess
 import time
 import webview
-
-def resource_path(relative_path):
-    """
-    Obtém o caminho absoluto para um recurso.
-    Funciona tanto em desenvolvimento quanto quando empacotado com PyInstaller (modo onefile).
-    """
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+from utils import resource_path  # Importa a função centralizada
 
 def start_streamlit():
     # Usa resource_path para localizar o arquivo home.py

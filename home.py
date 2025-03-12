@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 import os
 from PIL import Image
+from utils import resource_path
 
 def resource_path(relative_path):
     """
@@ -28,12 +29,12 @@ def resource_path(relative_path):
 
 # Carrega as imagens usando resource_path e PIL
 logo_horizontal_path = resource_path("LOGO_VR.png")
-logo_reduzida_path = resource_path("LOGO_VR_REDUZIDA.png")
+logo_reduzida_path   = resource_path("LOGO_VR_REDUZIDA.png")
 
 try:
-    logo_horizontal_image = Image.open(logo_horizontal_path)
-    logo_reduzida_image = Image.open(logo_reduzida_path)
-    st.logo(image=logo_horizontal_image, size="large", icon_image=logo_reduzida_image)
+    logo_horizontal = Image.open(logo_horizontal_path)
+    logo_reduzida   = Image.open(logo_reduzida_path)
+    st.logo(image=logo_horizontal, size="large", icon_image=logo_reduzida)
 except Exception as e:
     st.error(f"Não foi possível carregar as imagens: {e}")
 

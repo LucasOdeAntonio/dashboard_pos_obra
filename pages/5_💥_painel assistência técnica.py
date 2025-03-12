@@ -7,6 +7,7 @@ from datetime import datetime, date
 import sys
 import os
 from PIL import Image
+from utils import resource_path
 
 # =============================================================================
 # Função para normalizar os nomes das colunas (remove espaços extras)
@@ -87,17 +88,15 @@ st.set_page_config(
 )
 
 # Exibição dos logos (utilizando use_container_width, pois use_column_width está depreciado)
-def resource_path(relative_path):
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+logo_horizontal_path = resource_path("LOGO_VR.png")
+logo_reduzida_path   = resource_path("LOGO_VR_REDUZIDA.png")
 
-logo_path = resource_path("LOGO_VR.png")
 try:
-    logo_image = Image.open(logo_path)
-    st.logo(image=logo_image, size="large")
+    logo_horizontal = Image.open(logo_horizontal_path)
+    logo_reduzida   = Image.open(logo_reduzida_path)
+    st.logo(image=logo_horizontal, size="large", icon_image=logo_reduzida)
 except Exception as e:
-    st.error(f"Não foi possível carregar a imagem: {e}")
+    st.error(f"Não foi possível carregar as imagens: {e}")
 
 st.markdown('<h1 style="color: orange;">Painel de Assistência Técnica 💥</h1>', unsafe_allow_html=True)
 st.markdown('Acompanhamento de Solicitações de Assistência Técnica')
