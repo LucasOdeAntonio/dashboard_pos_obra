@@ -21,20 +21,21 @@ st.set_page_config(
 )
 
 # Carregar os logos usando resource_path e PIL para garantir a leitura correta
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+# Carrega as imagens usando resource_path e PIL
 logo_horizontal_path = resource_path("LOGO_VR.png")
 logo_reduzida_path = resource_path("LOGO_VR_REDUZIDA.png")
+
 try:
     logo_horizontal_image = Image.open(logo_horizontal_path)
     logo_reduzida_image = Image.open(logo_reduzida_path)
-except Exception as e:
-    st.error("Erro ao carregar os logos: " + str(e))
-    logo_horizontal_image = None
-    logo_reduzida_image = None
-
-if logo_horizontal_image and logo_reduzida_image:
     st.logo(image=logo_horizontal_image, size="large", icon_image=logo_reduzida_image)
-else:
-    st.write("Logos não carregados.")
+except Exception as e:
+    st.error(f"Não foi possível carregar as imagens: {e}")
 
 # CEBEÇALHO INÍCIO ===========================================================================================================================
 st.markdown('<h1 style="color: orange;">Painel de Resultados 📈</h1>', unsafe_allow_html=True)
